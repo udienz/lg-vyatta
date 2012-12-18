@@ -110,7 +110,7 @@ my %valid_query = (
 			"summary"		=>	"show bgp summary",
 			"ping"			=>	"ping count 5 %s"
 			}
-		}
+		},
 	"vyatta"		=>	{
 		"ipv4"			=>	{
 			"bgp"			=>	"show ip bgp %s",
@@ -699,11 +699,13 @@ sub run_command
 		$regexp = $1;
 	}
 
+	#vyatta support
+
 	my $prependcommand;
 	my $postpendcommand;
 
-	if ($ostypes{$FORM{router}} eq "vyatta") && ($command =~ /^show.*) {
-		$prependcommand = "/usr/bin/vytsh -c '";
+	if (($ostypes{$FORM{router}} eq "vyatta") && ($command =~ /^show/i)) {
+		$prependcommand = "\/usr\/bin\/vtysh -c '";
 		$postpendcommand = "'";
 	} else {
 		$prependcommand = "";
