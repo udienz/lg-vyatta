@@ -111,10 +111,19 @@ my %valid_query = (
 			"ping"			=>	"ping count 5 %s"
 			}
 		}
+	"vyatta"		=>	{
+		"ipv4"			=>	{
+			"bgp"			=>	"show ip bgp %s",
+			"advertised-routes"	=>	"show ip bgp neighbors %s advertised-routes",
+			"summary"		=>	"show ip bgp summary",
+			"ping"			=>	"ping -c 10 %s",
+			"trace"			=>	"traceroute -A %s"
+			}
+		}
 );
 
 my %whois = (
-	"RIPE"		=>	"http://www.ripe.net/perl/whois?AS%s",
+	"RIPE"		=>	"https://apps.db.ripe.net/search/query.html?searchtext=AS%s&flags=&sources=RIPE_NCC&grssources=&inverse=&types=#resultsAnchor#resultsAnchor",
 	"ARIN"		=>	"http://www.arin.net/cgi-bin/whois.pl?queryinput=%s",
 	"APNIC"		=>	"http://www.apnic.net/apnic-bin/whois.pl?searchtext=AS%s",
 	"default"	=>	"http://www.sixxs.net/tools/whois/?AS%s"
@@ -690,6 +699,17 @@ sub run_command
 		$regexp = $1;
 	}
 
+	my $prependcommand;
+	my $postpendcommand;
+
+	if ($ostypes{$FORM{router}} eq "vyatta") {
+		$prependcommand = "/usr/bin/vytsh -c '";
+		$postpendcommand = "'";
+	} else {
+		$prependcommand = "";
+		$postpendcommand = "; quit";
+	}
+	
 	if ($scheme eq "rsh") {
 		print_error("Configuration error, missing rshcmd") if ($rshcmd eq "");
 		open(P, "$rshcmd $host \'$command\' |");
@@ -704,7 +724,7 @@ sub run_command
 			use Net::SSH::Perl::Cipher;
 		";
 		die $@ if $@;
-		my $remotecmd = "$command; quit";
+		my $remotecmd = "$prependcommand $command $postpendcommand";
 		$remotecmd = "set cli logical-system $logicalsystem{$FORM{router}}; " . $command if (defined $logicalsystem{$FORM{router}});
 		$port = 22 if ($port eq "");
 		my $ssh = Net::SSH::Perl->new($host, port => $port);
@@ -723,7 +743,7 @@ sub run_command
 			use Net::SSH2;
 		";
 		die $@ if $@;
-		my $remotecmd = "$command; quit";
+		my $remotecmd = "$prependcommand $command $postpendcommand";
 		$remotecmd = "set cli logical-system $logicalsystem{$FORM{router}}; " . $command if (defined $logicalsystem{$FORM{router}});
 		$port = 22 if ($port eq "");
 		$ssh2 = Net::SSH2->new();
