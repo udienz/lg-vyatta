@@ -702,7 +702,7 @@ sub run_command
 	my $prependcommand;
 	my $postpendcommand;
 
-	if ($ostypes{$FORM{router}} eq "vyatta") {
+	if ($ostypes{$FORM{router}} eq "vyatta") && ($command =~ /^show.*) {
 		$prependcommand = "/usr/bin/vytsh -c '";
 		$postpendcommand = "'";
 	} else {
