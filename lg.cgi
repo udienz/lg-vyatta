@@ -116,8 +116,8 @@ my %valid_query = (
 			"bgp"			=>	"show ip bgp %s",
 			"advertised-routes"	=>	"show ip bgp neighbors %s advertised-routes",
 			"summary"		=>	"show ip bgp summary",
-			"ping"			=>	"ping -c 10 %s",
-			"trace"			=>	"traceroute -A %s"
+			"ping"			=>	"ping %s",
+			"trace"			=>	"traceroute %s"
 			}
 		}
 );
@@ -704,12 +704,20 @@ sub run_command
 	my $prependcommand;
 	my $postpendcommand;
 
-	if (($ostypes{$FORM{router}} eq "vyatta") && ($command =~ /^show/i)) {
-		$prependcommand = "\/usr\/bin\/vtysh -c '";
-		$postpendcommand = "'";
+	if ($ostypes{$FORM{router}} eq "vyatta") {
+		if ($command =~ /^show/i) {
+			$prependcommand = "\/usr\/bin\/vtysh -c '";
+			$postpendcommand = "'";
+		} elsif ($command =~ /^trace/i) {
+			$prependcommand = "\/usr\/bin\/";
+			$postpendcommand = " -A -n";
+		} elsif ($command =~ /^ping/i) {
+			$prependcommand = "\/bin\/";
+                        $postpendcommand = " -c 10";
+		}	
 	} else {
 		$prependcommand = "";
-		$postpendcommand = "; quit";
+                $postpendcommand = " ; quit";
 	}
 	
 	if ($scheme eq "rsh") {
@@ -726,7 +734,7 @@ sub run_command
 			use Net::SSH::Perl::Cipher;
 		";
 		die $@ if $@;
-		my $remotecmd = "$prependcommand $command $postpendcommand";
+		my $remotecmd = "$prependcommand" . "$command" . "$postpendcommand";
 		$remotecmd = "set cli logical-system $logicalsystem{$FORM{router}}; " . $command if (defined $logicalsystem{$FORM{router}});
 		$port = 22 if ($port eq "");
 		my $ssh = Net::SSH::Perl->new($host, port => $port);
@@ -745,7 +753,7 @@ sub run_command
 			use Net::SSH2;
 		";
 		die $@ if $@;
-		my $remotecmd = "$prependcommand $command $postpendcommand";
+		my $remotecmd = "$prependcommand" . "$command" . "$postpendcommand";
 		$remotecmd = "set cli logical-system $logicalsystem{$FORM{router}}; " . $command if (defined $logicalsystem{$FORM{router}});
 		$port = 22 if ($port eq "");
 		$ssh2 = Net::SSH2->new();
@@ -852,10 +860,7 @@ my $in_func_showlines = 0;
 sub showlines {
 	my $input = shift;
 
-	if ($command =~ /^trace/i | $command =~ /^ping/i) {
-		if ($command =~ /^trace/i) {
-			$input =~ s/(\[AS\s+)(\d+)(\])/($1 . as2link($2) . $3)/e;
-		}
+	if ($command =~ /^ping/i) {
 		print $input;
 		return;
 	}
@@ -883,7 +888,9 @@ sub showline {
 	$inemptyheader = 0;
 
 	$_ = html_encode($_);
-	if ($command eq "show ip bgp summary") {
+	if ($command =~ /^trace/i) {
+                s/(\[AS\s*)(\d+)(\])/($1 . " " . as2link($2) .  $3)/e;
+	} elsif ($command eq "show ip bgp summary") {
 		s/( local AS number )(\d+)/($1 . as2link($2))/e;
 		s/^([\d\.]+\s+\d+\s+)(\d+)/($1 . as2link($2))/e;
 		s/^(\d+\.\d+\.\d+\.\d+)(\s+.*\s+)([1-9]\d*)$/($1 . $2 . bgplink($3, "neighbors+$1+routes"))/e;
