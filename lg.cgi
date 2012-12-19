@@ -351,7 +351,7 @@ sub xml_charparse {
 	} elsif ($elem eq "timeout") {
 		$timeout = $str;
 	} elsif ($elem eq "disclaimer") {
-		$disclaimer = "<CENTER><TABLE WIDTH=\"85%\"><TR><TD><FONT SIZE=-3>Disclaimer: $str</FONT></TD></TR></TABLE></CENTER>\n";
+		$disclaimer = "<CENTER><TABLE WIDTH=\"85%\"><TR><TD><DIV ALIGN=\"CENTER\"><FONT SIZE=-3>Disclaimer: $str</FONT></DIV></TD></TR></TABLE></CENTER>\n";
 	} elsif ($elem eq "securemode") {
 		if ($str =~ /^(0|off|no)$/i) {
 			$securemode = 0;
