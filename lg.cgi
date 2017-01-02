@@ -24,7 +24,6 @@
 use strict qw(subs vars);
 
 my $configfile = "lg.conf";
-#$configfile = "lg.conf";
 $ENV{HOME} = ".";	# SSH needs access for $HOME/.ssh
 
 use XML::Parser;
